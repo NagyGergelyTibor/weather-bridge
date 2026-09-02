@@ -1,0 +1,60 @@
+const mqtt = require('mqtt');
+const { InfluxDB, Point } = require('@influxdata/influxdb-client');
+const http = require('http'); // ÚJ: Webszerver modul a felhős futtatáshoz
+
+// --- 1. INFLUXDB BEÁLLÍTÁSOK (Biztonságosan) ---
+const url = 'https://eu-central-1-1.aws.cloud2.influxdata.com';
+const token = process.env.INFLUX_TOKEN; // A Render felületén fogjuk megadni!
+const org = 'weather_station';
+const bucket = 'weather_data';
+
+if (!token) {
+    console.error('Kritikus hiba: Nincs megadva az INFLUX_TOKEN környezeti változó!');
+    process.exit(1);
+}
+
+const influxDB = new InfluxDB({ url, token });
+const writeApi = influxDB.getWriteApi(org, bucket, 'ns');
+
+// --- 2. MQTT BEÁLLÍTÁSOK ---
+const mqttClient = mqtt.connect('mqtt://broker.hivemq.com');
+const topic = 'szakdolgozat/idojaras/allomas1';
+
+// --- 3. FOLYAMATOS LOGIKA ---
+mqttClient.on('connect', () => {
+    console.log('Sikeresen csatlakozva az MQTT brokerhez!');
+    mqttClient.subscribe(topic, (err) => {
+        if (!err) console.log(`Fülelés elindítva a(z) ${topic} csatornán...`);
+    });
+});
+
+mqttClient.on('message', (topic, message) => {
+    try {
+        const data = JSON.parse(message.toString());
+        const point = new Point('station_metrics')
+            .floatField('temperature', data.temp)
+            .floatField('humidity', data.hum)
+            .floatField('wind_speed', data.wind_kmh)
+            .floatField('wind_direction', data.wind_dir)
+            .floatField('rain', data.rain_mm)
+            .floatField('battery_voltage', data.batt_v);
+
+        writeApi.writePoint(point);
+        writeApi.flush()
+            .then(() => console.log('✅ Adat mentve:', data))
+            .catch(err => console.error('❌ InfluxDB hiba:', err));
+    } catch (error) {
+        console.error('❌ JSON feldolgozási hiba:', error);
+    }
+});
+
+// --- 4. DUMMY WEBSZERVER (A Render.com miatt) ---
+const port = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('A weather-bridge aktiv es mukodik!\n');
+});
+
+server.listen(port, () => {
+    console.log(`Webszerver hallgatózik a ${port}-es porton.`);
+});
