@@ -56,7 +56,7 @@ mqttClient.on('message', (topic, message) => {
         console.error('❌ JSON feldolgozási hiba:', error);
     }
 });
-
+ 
 // --- 4. DUMMY WEBSZERVER (A Render.com miatt) ---
 const port = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
