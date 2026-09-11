@@ -40,7 +40,13 @@ mqttClient.on('message', (topic, message) => {
             .floatField('rain', data.rain)
             .floatField('lux', data.lux)
             .floatField('uv', data.uv)
-            .floatField('battery_voltage', data.battery_voltage);
+            .floatField('battery_voltage', data.battery_voltage)
+            // ÚJ: rendszerdiagnosztikai mezők
+            .floatField('wifi_signal', data.wifi_signal)
+            .floatField('internal_temp', data.internal_temp)
+            .intField('packets_sent', data.packets_sent)
+            .intField('sleep_cycles', data.sleep_cycles)
+            .floatField('deep_sleep_pct', data.deep_sleep_pct);
 
         writeApi.writePoint(point);
         writeApi.flush()
