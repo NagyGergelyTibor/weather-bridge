@@ -32,12 +32,15 @@ mqttClient.on('message', (topic, message) => {
     try {
         const data = JSON.parse(message.toString());
         const point = new Point('station_metrics')
-            .floatField('temperature', data.temp)
-            .floatField('humidity', data.hum)
-            .floatField('wind_speed', data.wind_kmh)
-            .floatField('wind_direction', data.wind_dir)
-            .floatField('rain', data.rain_mm)
-            .floatField('battery_voltage', data.batt_v);
+            .floatField('temperature', data.temperature)
+            .floatField('humidity', data.humidity)
+            .floatField('pressure', data.pressure)
+            .floatField('wind_speed', data.wind_speed)
+            .floatField('wind_direction', data.wind_direction)
+            .floatField('rain', data.rain)
+            .floatField('lux', data.lux)
+            .floatField('uv', data.uv)
+            .floatField('battery_voltage', data.battery_voltage);
 
         writeApi.writePoint(point);
         writeApi.flush()
